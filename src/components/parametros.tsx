@@ -23,15 +23,15 @@ export function Parametros({ config, onChange }: Propriedades) {
   }
 
   return (
-    <Collapsible defaultOpen className="rounded-xl ring-1 ring-foreground/10">
+    <Collapsible defaultOpen className="rounded-xl border border-border bg-card">
       <CollapsibleTrigger
         className={cn(
           buttonVariants({ variant: "ghost" }),
-          "h-auto min-h-10 w-full flex-wrap justify-between gap-x-3 rounded-xl px-4 py-2 text-left whitespace-normal",
+          "h-auto min-h-16 w-full flex-wrap justify-between gap-x-3 rounded-xl px-4 py-3 text-left whitespace-normal",
         )}
       >
-        <span>Parâmetros da prova</span>
-        <span className="text-sm font-normal text-muted-foreground">Qualquer mudança recalcula as listas</span>
+        <span className="text-xl font-semibold">Parâmetros da prova</span>
+        <span className="text-xs font-normal text-muted-foreground">Qualquer mudança recalcula as listas</span>
       </CollapsibleTrigger>
       <CollapsibleContent className="grid gap-4 px-4 pt-1 pb-4 sm:grid-cols-2 lg:grid-cols-4">
         <Campo id="data-prova" rotulo="Data da prova">

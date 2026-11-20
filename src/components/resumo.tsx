@@ -57,10 +57,10 @@ export function Resumo({ resultado }: Propriedades) {
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cartoes.map(([rotulo, valor]) => (
-          <Card key={rotulo} size="sm">
+          <Card key={rotulo}>
             <CardHeader>
               <CardDescription>{rotulo}</CardDescription>
-              <CardTitle className="text-2xl tabular-nums">{valor}</CardTitle>
+              <CardTitle className="text-[1.75rem] leading-none font-bold tabular-nums">{valor}</CardTitle>
             </CardHeader>
           </Card>
         ))}
@@ -69,12 +69,12 @@ export function Resumo({ resultado }: Propriedades) {
       <div
         className={
           stats.conciliacaoFecha
-            ? "rounded-xl bg-green-50 px-4 py-3 text-green-800 ring-1 ring-green-200 dark:bg-green-950 dark:text-green-200 dark:ring-green-900"
-            : "rounded-xl bg-red-50 px-4 py-3 text-red-800 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-200 dark:ring-red-900"
+            ? "rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-success"
+            : "rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive"
         }
       >
         <p className="text-sm">linhas = confirmados + pendentes + desistências + duplicadas</p>
-        <p className="mt-1 text-lg font-medium tabular-nums">
+        <p className="mt-1 text-[1.75rem] leading-none font-bold tabular-nums">
           {stats.linhas} = {stats.confirmados} + {stats.pendentes} + {stats.desistencias} + {stats.duplicadas}
         </p>
         <p className="mt-1 text-sm">{stats.conciliacaoFecha ? "A conta fecha." : "A conta não fecha."}</p>
@@ -82,23 +82,23 @@ export function Resumo({ resultado }: Propriedades) {
 
       <Card size="sm">
         <CardHeader>
-          <CardTitle>Camisetas</CardTitle>
+          <CardTitle className="text-xl">Camisetas</CardTitle>
           <CardDescription>Confirmados e, à parte, quem ainda pode pagar.</CardDescription>
         </CardHeader>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Tamanho</TableHead>
-              <TableHead>Confirmados</TableHead>
-              <TableHead>Se pagarem</TableHead>
+              <TableHead className="text-right">Confirmados</TableHead>
+              <TableHead className="text-right">Se pagarem</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {tamanhos.map((tamanho) => (
               <TableRow key={tamanho}>
                 <TableCell>{tamanho}</TableCell>
-                <TableCell className="tabular-nums">{camisetas.confirmados[tamanho]}</TableCell>
-                <TableCell className="tabular-nums">{camisetas.pendentes[tamanho]}</TableCell>
+                <TableCell className="text-right tabular-nums">{camisetas.confirmados[tamanho]}</TableCell>
+                <TableCell className="text-right tabular-nums">{camisetas.pendentes[tamanho]}</TableCell>
               </TableRow>
             ))}
           </TableBody>

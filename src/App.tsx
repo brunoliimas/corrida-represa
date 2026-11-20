@@ -122,18 +122,27 @@ export default function App() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Rune · Every race, in sync</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Suba o CSV das inscrições e baixe as listas de inscritos, reembolsos, kit e SMS.
-          </p>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 md:px-8 md:py-8">
+      <header className="flex min-h-16 flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="inline-flex h-9 shrink-0 items-center rounded-lg border border-border bg-ink px-2.5 text-base leading-none font-semibold tracking-tight text-rune-white"
+          >
+            rune<span className="text-primary">.</span>
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-[1.75rem] leading-none font-bold tracking-tight">Rune</h1>
+            <p className="mt-1 text-xs text-muted-foreground">Every race, in sync</p>
+          </div>
         </div>
-        <Button type="button" variant="outline" onClick={alternarTema}>
+        <Button type="button" variant="outline" className="shrink-0" onClick={alternarTema}>
           {escuro ? "Tema claro" : "Tema escuro"}
         </Button>
       </header>
+      <p className="max-w-2xl text-sm text-muted-foreground">
+        Suba o CSV das inscrições e baixe as listas de inscritos, reembolsos, kit e SMS.
+      </p>
 
       <Parametros config={config} onChange={aplicarConfig} />
       <UploadCsv nomeArquivo={nomeArquivo} processando={processando} onArquivo={(arquivo) => void aoArquivo(arquivo)} />
@@ -146,7 +155,7 @@ export default function App() {
       ) : null}
 
       {avisos.length > 0 ? (
-        <Alert>
+        <Alert variant="warning">
           <AlertTitle>Atenção na leitura</AlertTitle>
           <AlertDescription>
             {avisos.map((aviso) => (
@@ -159,33 +168,21 @@ export default function App() {
       ) : null}
 
       {resultado && linhas && linhas.length === 0 ? (
-        <Alert>
+        <Alert variant="info">
           <AlertTitle>Arquivo sem inscrições</AlertTitle>
           <AlertDescription>O cabeçalho foi reconhecido, mas não há linhas para processar.</AlertDescription>
         </Alert>
       ) : null}
 
       {resultado ? (
-        <Tabs key={nomeArquivo ?? "sem-arquivo"} defaultValue="resumo">
-          <TabsList className="h-auto! w-full flex-wrap justify-start">
-            <TabsTrigger className="h-7 flex-none px-2.5" value="resumo">
-              Resumo
-            </TabsTrigger>
-            <TabsTrigger className="h-7 flex-none px-2.5" value="inscritos">
-              Inscritos
-            </TabsTrigger>
-            <TabsTrigger className="h-7 flex-none px-2.5" value="reembolsos">
-              Reembolsos
-            </TabsTrigger>
-            <TabsTrigger className="h-7 flex-none px-2.5" value="kit">
-              Kit e camisetas
-            </TabsTrigger>
-            <TabsTrigger className="h-7 flex-none px-2.5" value="sms">
-              SMS
-            </TabsTrigger>
-            <TabsTrigger className="h-7 flex-none px-2.5" value="alertas">
-              Alertas
-            </TabsTrigger>
+        <Tabs key={nomeArquivo ?? "sem-arquivo"} defaultValue="resumo" className="gap-4">
+          <TabsList>
+            <TabsTrigger value="resumo">Resumo</TabsTrigger>
+            <TabsTrigger value="inscritos">Inscritos</TabsTrigger>
+            <TabsTrigger value="reembolsos">Reembolsos</TabsTrigger>
+            <TabsTrigger value="kit">Kit e camisetas</TabsTrigger>
+            <TabsTrigger value="sms">SMS</TabsTrigger>
+            <TabsTrigger value="alertas">Alertas</TabsTrigger>
           </TabsList>
           <TabsContent value="resumo">
             <Resumo resultado={resultado} />

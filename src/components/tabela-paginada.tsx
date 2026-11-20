@@ -99,7 +99,7 @@ export function TabelaPaginada<T>({ itens, colunas, nomeArquivo, busca, vazio, r
             : `Mostrando ${inicio + 1}–${fim} de ${filtrados.length}`}
         </p>
         <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" disabled={paginaAtual === 0} onClick={() => setPagina(paginaAtual - 1)}>
+          <Button type="button" variant="secondary" disabled={paginaAtual === 0} onClick={() => setPagina(paginaAtual - 1)}>
             Anterior
           </Button>
           <span className="text-sm tabular-nums">
@@ -107,7 +107,7 @@ export function TabelaPaginada<T>({ itens, colunas, nomeArquivo, busca, vazio, r
           </span>
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             disabled={paginaAtual >= totalPaginas - 1}
             onClick={() => setPagina(paginaAtual + 1)}
           >

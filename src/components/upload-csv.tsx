@@ -15,8 +15,8 @@ export function UploadCsv({ nomeArquivo, processando, onArquivo }: Propriedades)
     <div
       className={
         sobre
-          ? "rounded-xl border border-dashed border-primary bg-muted px-6 py-8 text-center"
-          : "rounded-xl border border-dashed px-6 py-8 text-center"
+          ? "rounded-xl border border-dashed border-primary bg-accent px-6 py-8 text-center"
+          : "rounded-xl border border-dashed border-border bg-card px-6 py-8 text-center"
       }
       onDragOver={(evento) => {
         evento.preventDefault()

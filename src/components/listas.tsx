@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { formatarReais } from "../lib/export.ts"
-import { listarAlertas, listarKit } from "../lib/rules.ts"
+import { ALERTAS, listarAlertas, listarKit } from "../lib/rules.ts"
 import { listarSms, montarTextoBase } from "../lib/sms.ts"
 import type { Inscrito, ResultadoProcessamento } from "../lib/types.ts"
 import { combinaPessoa, nomePlataforma, textoOuTraco } from "./consulta.ts"
@@ -8,6 +8,22 @@ import { TabelaPaginada } from "./tabela-paginada.tsx"
 import { Badge } from "./ui/badge"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
+
+const NUMERO = "text-right tabular-nums"
+
+const ALERTAS_DE_ERRO = new Set<string>([
+  ALERTAS.nascimento,
+  ALERTAS.camiseta,
+  ALERTAS.telefone,
+  ALERTAS.pagamento,
+  ALERTAS.cpf,
+  ALERTAS.percursoDesconhecido,
+])
+
+function tomDoAlerta(alerta: string): "destructive" | "warning" {
+  if (ALERTAS_DE_ERRO.has(alerta)) return "destructive"
+  return "warning"
+}
 
 export function AbaInscritos({ pessoas }: { pessoas: readonly Inscrito[] }) {
   return (
@@ -17,7 +33,7 @@ export function AbaInscritos({ pessoas }: { pessoas: readonly Inscrito[] }) {
       vazio="Nenhum inscrito confirmado."
       busca={(pessoa, termo) => combinaPessoa(pessoa.nome, pessoa.cpfFormatado ?? pessoa.cpf, termo)}
       colunas={[
-        { id: "id", titulo: "Id", csv: (pessoa) => pessoa.id, celula: (pessoa) => pessoa.id },
+        { id: "id", titulo: "Id", className: NUMERO, csv: (pessoa) => pessoa.id, celula: (pessoa) => pessoa.id },
         { id: "nome", titulo: "Nome", csv: (pessoa) => pessoa.nome, celula: (pessoa) => pessoa.nome },
         {
           id: "cpf",
@@ -35,6 +51,7 @@ export function AbaInscritos({ pessoas }: { pessoas: readonly Inscrito[] }) {
         {
           id: "idade",
           titulo: "Idade",
+          className: NUMERO,
           csv: (pessoa) => pessoa.idade,
           celula: (pessoa) => textoOuTraco(pessoa.idade),
         },
@@ -55,6 +72,7 @@ export function AbaInscritos({ pessoas }: { pessoas: readonly Inscrito[] }) {
         {
           id: "valor",
           titulo: "Valor pago",
+          className: NUMERO,
           csv: (pessoa) => formatarReais(pessoa.valorPago),
           celula: (pessoa) => formatarReais(pessoa.valorPago),
         },
@@ -69,7 +87,7 @@ export function AbaInscritos({ pessoas }: { pessoas: readonly Inscrito[] }) {
             ) : (
               <span className="flex flex-wrap gap-1">
                 {pessoa.alertas.map((alerta) => (
-                  <Badge key={alerta} variant="secondary">
+                  <Badge key={alerta} variant={tomDoAlerta(alerta)}>
                     {alerta}
                   </Badge>
                 ))}
@@ -90,7 +108,7 @@ export function AbaReembolsos({ resultado }: { resultado: ResultadoProcessamento
       vazio="Nenhum reembolso."
       busca={(item, termo) => combinaPessoa(item.nome, item.cpfFormatado ?? item.cpf, termo)}
       rodape={
-        <p className="text-sm font-medium">
+        <p className="text-base font-semibold tabular-nums">
           Total a devolver: {total} em {resultado.reembolsos.length} reembolsos.
         </p>
       }
@@ -112,12 +130,14 @@ export function AbaReembolsos({ resultado }: { resultado: ResultadoProcessamento
         {
           id: "pago",
           titulo: "Pago",
+          className: NUMERO,
           csv: (item) => formatarReais(item.pago),
           celula: (item) => formatarReais(item.pago),
         },
         {
           id: "devolver",
           titulo: "Devolver",
+          className: NUMERO,
           csv: (item) => formatarReais(item.devolver),
           celula: (item) => formatarReais(item.devolver),
         },
@@ -177,8 +197,8 @@ export function AbaSms({ pessoas, largada, retirada, onLargada, onRetirada }: Sm
         </div>
       </div>
       <p className="text-sm text-pretty">{texto}</p>
-      <p className="text-sm text-muted-foreground">Texto-base: {texto.length} caracteres. Nenhuma mensagem é enviada daqui.</p>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-xs text-muted-foreground">Texto-base: {texto.length} caracteres. Nenhuma mensagem é enviada daqui.</p>
+      <p className="text-xs text-muted-foreground">
         Sem data de nascimento, a pessoa recebe “Responda com a sua data de nascimento.” Percurso a confirmar pede a
         resposta do percurso. Menor de idade recebe o lembrete da autorização.
       </p>
@@ -205,6 +225,7 @@ export function AbaSms({ pessoas, largada, retirada, onLargada, onRetirada }: Sm
           {
             id: "caracteres",
             titulo: "Caracteres",
+            className: NUMERO,
             csv: (item) => item.caracteres,
             celula: (item) => item.caracteres,
           },
@@ -237,7 +258,7 @@ export function AbaAlertas({ resultado }: { resultado: ResultadoProcessamento })
           titulo: "Situação",
           csv: (item) => (item.situacao === "pendente" ? "Pendente" : "Confirmado"),
           celula: (item) => (
-            <Badge variant={item.situacao === "pendente" ? "destructive" : "secondary"}>
+            <Badge variant={item.situacao === "pendente" ? "warning" : "success"}>
               {item.situacao === "pendente" ? "Pendente" : "Confirmado"}
             </Badge>
           ),
