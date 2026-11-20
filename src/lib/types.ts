@@ -37,7 +37,7 @@ export type InscricaoNormalizada = {
 }
 
 export type ResultadoCsv =
-  | { ok: true; linhas: InscricaoNormalizada[] }
+  | { ok: true; linhas: InscricaoNormalizada[]; avisos: string[] }
   | { ok: false; erro: string; faltando: string[] }
 
 export type Inscrito = {

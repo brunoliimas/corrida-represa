@@ -23,6 +23,12 @@ describe("datas", () => {
     expect(parseData("07/12/25")).toBe("2025-12-07")
   })
 
+  it("ignora a hora em datas ISO", () => {
+    expect(parseData("2025-10-31T23:15:00")).toBe("2025-10-31")
+    expect(parseData("2025-12-07T06:30:00.000Z")).toBe("2025-12-07")
+    expect(parseNascimento("1900-01-01T00:00:00")).toBeNull()
+  })
+
   it("interpreta ano de dois dígitos: acima de 26 é século 19", () => {
     expect(parseData("22/01/86")).toBe("1986-01-22")
     expect(parseData("15/01/26")).toBe("2026-01-15")
@@ -77,6 +83,15 @@ describe("identidade e contato", () => {
     expect(normalizarNome("ricardo almeida")).toBe("Ricardo Almeida")
     expect(normalizarNome("BEATRIZ LOPES COSTA")).toBe("Beatriz Lopes Costa")
     expect(normalizarNome("  ANTÔNIO  SILVA ")).toBe("Antônio Silva")
+  })
+
+  it("mantém de, da, do, dos, das e e em minúsculo, salvo na primeira palavra", () => {
+    expect(normalizarNome("MARIA DA SILVA")).toBe("Maria da Silva")
+    expect(normalizarNome("joão de souza e lima")).toBe("João de Souza e Lima")
+    expect(normalizarNome("ANA DOS SANTOS")).toBe("Ana dos Santos")
+    expect(normalizarNome("lucia das neves")).toBe("Lucia das Neves")
+    expect(normalizarNome("pedro do carmo")).toBe("Pedro do Carmo")
+    expect(normalizarNome("de souza")).toBe("De Souza")
   })
 })
 
@@ -135,6 +150,7 @@ describe("parseCsv", () => {
     expect(linha?.valorPago).toBe(44.5)
     expect(linha?.dataPagamento).toBe("2025-10-31")
     expect(linha?.telefone).toBe("(11) 99999-9999")
+    expect(resultado.avisos).toEqual([])
   })
 
   it("aceita separador ponto e vírgula", () => {
@@ -147,6 +163,18 @@ describe("parseCsv", () => {
     if (!resultado.ok) return
     expect(resultado.linhas[0]?.nome).toBe("Bia")
     expect(resultado.linhas[0]?.valorPago).toBe(89)
+  })
+
+  it("avisa as linhas com erro de leitura", () => {
+    const texto = `${CABECALHO}
+1,site,Ana,12345678909,1990-01-01,F,5k,P,89,2025-08-01,pago,a@a.com,11999999999,
+2,site,Bia
+3,site,Caio,12345678901,1990-01-01,F,5k,P,89,2025-08-01,pago,c@c.com,11999999999,`
+    const resultado = parseCsv(texto)
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+    expect(resultado.linhas).toHaveLength(3)
+    expect(resultado.avisos).toEqual(["Há problemas de leitura na linha 3."])
   })
 
   it("lista as colunas que faltam", () => {

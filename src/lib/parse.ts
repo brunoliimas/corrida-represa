@@ -1,4 +1,4 @@
-import { parse as analisarCsv } from "papaparse"
+import { parse as analisarCsv, type ParseError } from "papaparse"
 import type {
   Camiseta,
   InscricaoNormalizada,
@@ -39,6 +39,7 @@ const CAMISETAS: Record<string, Exclude<Camiseta, "?">> = {
 }
 
 const DATA_ISO = /^(\d{4})-(\d{2})-(\d{2})$/
+const DATA_ISO_COM_HORA = /^(\d{4})-(\d{2})-(\d{2})T/
 const DATA_BR = /^(\d{1,2})[/-](\d{1,2})[/-](\d{2}|\d{4})$/
 
 export function semAcento(valor: string): string {
@@ -71,6 +72,11 @@ export function montarData(ano: number, mes: number, dia: number): string | null
 export function parseData(valor: string | null | undefined): string | null {
   const texto = (valor ?? "").trim()
   if (!texto) return null
+
+  const comHora = DATA_ISO_COM_HORA.exec(texto)
+  if (comHora) {
+    return montarData(Number(comHora[1]), Number(comHora[2]), Number(comHora[3]))
+  }
 
   const iso = DATA_ISO.exec(texto)
   if (iso) {
@@ -137,13 +143,16 @@ export function normalizarTelefone(valor: string | null | undefined): string | n
   return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`
 }
 
+const PARTICULAS_DO_NOME = new Set(["de", "da", "do", "dos", "das", "e"])
+
 export function normalizarNome(valor: string | null | undefined): string {
   return (valor ?? "")
     .trim()
     .split(/\s+/)
     .filter((parte) => parte.length > 0)
-    .map((parte) => {
+    .map((parte, indice) => {
       const minusculo = parte.toLocaleLowerCase("pt-BR")
+      if (indice > 0 && PARTICULAS_DO_NOME.has(minusculo)) return minusculo
       return minusculo.charAt(0).toLocaleUpperCase("pt-BR") + minusculo.slice(1)
     })
     .join(" ")
@@ -234,5 +243,20 @@ export function parseCsv(texto: string): ResultadoCsv {
   return {
     ok: true,
     linhas: resultado.data.map(normalizarLinha),
+    avisos: avisosDeLeitura(resultado.errors),
   }
+}
+
+function avisosDeLeitura(erros: ParseError[]): string[] {
+  if (erros.length === 0) return []
+
+  const linhas = [
+    ...new Set(
+      erros.flatMap((erro) => (erro.row === undefined ? [] : [erro.row + 2])),
+    ),
+  ].sort((a, b) => a - b)
+
+  if (linhas.length === 0) return ["Há problemas de leitura no arquivo."]
+  if (linhas.length === 1) return [`Há problemas de leitura na linha ${linhas[0]}.`]
+  return [`Há problemas de leitura nas linhas ${linhas.join(", ")}.`]
 }

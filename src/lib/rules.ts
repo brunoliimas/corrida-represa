@@ -34,13 +34,18 @@ export const ALERTAS = {
   pedidoSemData: "Pedido de reembolso sem data legível",
   dataPagamento: "Data de pagamento ausente",
   cpf: "CPF inválido",
+  percursoDesconhecido: "Percurso não reconhecido",
+  sexo: "Sexo não informado",
+  camisetaDiferente: "Camiseta diferente nas inscrições",
 } as const
 
 const ALERTAS_DE_KIT = new Set<string>([
   ALERTAS.percurso,
+  ALERTAS.percursoDesconhecido,
   ALERTAS.nascimento,
   ALERTAS.menor,
   ALERTAS.camiseta,
+  ALERTAS.camisetaDiferente,
 ])
 
 const PALAVRAS_DESISTENCIA = ["reembolso", "cancel", "desist", "devol"]
@@ -80,7 +85,7 @@ export function somarDias(iso: string, dias: number): string {
 }
 
 export function idadeCompleta(nascimento: string | null, referencia: string): number | null {
-  if (!nascimento || nascimento === "1900-01-01") return null
+  if (!nascimento) return null
   const nasc = partesIso(nascimento)
   const ref = partesIso(referencia)
   if (!nasc || !ref) return null
@@ -159,16 +164,37 @@ type ContextoPessoa = {
   idade: number | null
   conflito: boolean
   percursos: Percurso[]
+  camisetasDiferentes: boolean
+}
+
+function camisetasDiferentes(grupo: readonly InscricaoNormalizada[]): boolean {
+  if (grupo.length < 2) return false
+  const tamanhos = new Set(grupo.map((linha) => linha.camiseta))
+  return tamanhos.size > 1
+}
+
+function pedidoDoGrupo(
+  grupo: readonly InscricaoNormalizada[],
+  anoProva: number,
+): { temPedido: boolean; data: string | null } {
+  for (const linha of grupo) {
+    const pedido = extrairPedidoReembolso(linha.obs, anoProva)
+    if (pedido.temPedido) return pedido
+  }
+  return { temPedido: false, data: null }
 }
 
 function montarAlertas(contexto: ContextoPessoa, config: ConfigProva, pendente: boolean): string[] {
-  const { linha, idade, conflito } = contexto
+  const { linha, idade, conflito, camisetasDiferentes: camisetasDistintas } = contexto
   const alertas: string[] = []
   if (!linha.cpf) alertas.push(ALERTAS.cpf)
   if (conflito) alertas.push(ALERTAS.percurso)
+  if (linha.percurso === null) alertas.push(ALERTAS.percursoDesconhecido)
+  if (!linha.sexo) alertas.push(ALERTAS.sexo)
   if (!linha.nascimento) alertas.push(ALERTAS.nascimento)
   if (idade !== null && idade < config.idadeMenor) alertas.push(ALERTAS.menor)
   if (linha.camiseta === "?") alertas.push(ALERTAS.camiseta)
+  if (camisetasDistintas) alertas.push(ALERTAS.camisetaDiferente)
   if (!linha.telefone) alertas.push(ALERTAS.telefone)
   if (pendente) alertas.push(ALERTAS.pendente)
   return alertas
@@ -268,16 +294,16 @@ export function processarInscricoes(
     const percursos = percursosDoGrupo(grupo)
     const conflito = percursos.length > 1
     const idade = idadeCompleta(keeper.nascimento, config.dataProva)
-    const contexto: ContextoPessoa = { linha: keeper, idade, conflito, percursos }
+    const contexto: ContextoPessoa = {
+      linha: keeper,
+      idade,
+      conflito,
+      percursos,
+      camisetasDiferentes: camisetasDiferentes(grupo),
+    }
 
     for (const extra of grupo) {
       if (extra === keeper) continue
-      const pago = centavos(extra.valorPago)
-      const devolver = aplicarTaxa(pago, config.taxaPlataforma)
-      totalCentavos += devolver
-      reembolsos.push(
-        reembolsoDe(extra, "duplicada", "Inscrição duplicada", pago, devolver, null, 100),
-      )
       duplicadas.push({
         id: extra.id,
         nome: extra.nome,
@@ -290,6 +316,13 @@ export function processarInscricoes(
         dataPagamento: extra.dataPagamento,
         idMantida: keeper.id,
       })
+      if (extra.valorPago <= 0) continue
+      const pago = centavos(extra.valorPago)
+      const devolver = aplicarTaxa(pago, config.taxaPlataforma)
+      totalCentavos += devolver
+      reembolsos.push(
+        reembolsoDe(extra, "duplicada", "Inscrição duplicada", pago, devolver, null, 100),
+      )
     }
 
     if (keeper.pendente) {
@@ -299,7 +332,7 @@ export function processarInscricoes(
       continue
     }
 
-    const pedido = extrairPedidoReembolso(keeper.obs, anoProva)
+    const pedido = pedidoDoGrupo(grupo, anoProva)
     if (pedido.temPedido && pedido.data) {
       const integral = pedido.data <= prazoIntegral
       const percentual = integral ? 100 : 50

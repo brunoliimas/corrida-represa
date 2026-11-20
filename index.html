@@ -5,6 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rune · Every race, in sync</title>
+    <script>
+      (function () {
+        try {
+          var tema = localStorage.getItem("rune-tema")
+          var escuro =
+            tema === "escuro" ||
+            (tema !== "claro" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+          if (escuro) document.documentElement.classList.add("dark")
+        } catch (erro) {
+          /* o tema padrão claro continua valendo */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

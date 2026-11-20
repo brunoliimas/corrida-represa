@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest"
 import { parseCsv } from "../src/lib/parse.ts"
 import {
-  ALERTAS,
-  CONFIG_PADRAO,
-  listarKit,
-  precoEsperado,
-  processarInscricoes,
+    ALERTAS,
+    CONFIG_PADRAO,
+    listarKit,
+    precoEsperado,
+    processarInscricoes,
 } from "../src/lib/rules.ts"
 import { inscricao } from "./inscricao.ts"
 
@@ -206,6 +206,19 @@ describe("desistência", () => {
   })
 })
 
+describe("nascimento inválido", () => {
+  it("gera alerta quando a data é 01/01/1900", () => {
+    const resultado = processarCsv([
+      "1,site,Thiago Moreira,50521597145,01/01/1900,Masculino,10km,M,89,30/09/2025,pago,t@t.com,11999999999,",
+    ])
+    expect(resultado.ativos[0]?.nascimento).toBeNull()
+    expect(resultado.ativos[0]?.idade).toBeNull()
+    expect(resultado.ativos[0]?.categoria).toBe("Sem categoria")
+    expect(resultado.ativos[0]?.alertas).toContain(ALERTAS.nascimento)
+    expect(resultado.reembolsos).toHaveLength(0)
+  })
+})
+
 describe("duplicidade", () => {
   it("não mescla homônimos com CPF diferente", () => {
     const resultado = processarInscricoes([
@@ -257,6 +270,7 @@ describe("duplicidade", () => {
     expect(resultado.ativos[0]?.percursoTexto).toBe("5/10 km")
     expect(resultado.ativos[0]?.categoria).toBe("(percurso a confirmar)")
     expect(resultado.ativos[0]?.alertas).toContain(ALERTAS.percurso)
+    expect(resultado.ativos[0]?.alertas).toContain(ALERTAS.camisetaDiferente)
     expect(resultado.ativos[0]?.camiseta).toBe("P")
     expect(resultado.camisetas.confirmados).toMatchObject({ P: 1, G: 0 })
   })
@@ -292,9 +306,60 @@ describe("duplicidade", () => {
     expect(resultado.pendentes.map((pessoa) => pessoa.id)).toEqual(["3"])
     expect(resultado.ativos.map((pessoa) => pessoa.id)).toEqual(["2"])
     expect(resultado.duplicadas.map((pessoa) => pessoa.id)).toEqual(["1"])
+    expect(resultado.reembolsos).toHaveLength(0)
     expect(resultado.camisetas.pendentes.GG).toBe(1)
     expect(resultado.camisetas.confirmados.M).toBe(1)
     expect(resultado.stats.conciliacaoFecha).toBe(true)
+  })
+
+  it("não gera reembolso de duplicada pendente com valor 0", () => {
+    const resultado = processarInscricoes([
+      inscricao({ id: "1", cpf: "11111111111", dataPagamento: "2025-08-01", valorPago: 89 }),
+      inscricao({
+        id: "2",
+        cpf: "11111111111",
+        pendente: true,
+        status: "Pendente",
+        valorPago: 0,
+        dataPagamento: "2025-11-01",
+      }),
+    ])
+
+    expect(resultado.duplicadas).toHaveLength(1)
+    expect(resultado.duplicadas[0]?.id).toBe("2")
+    expect(resultado.reembolsos).toHaveLength(0)
+    expect(resultado.stats.totalReembolsar).toBe(0)
+    expect(resultado.ativos.map((pessoa) => pessoa.id)).toEqual(["1"])
+  })
+
+  it("encontra o pedido de reembolso na obs de outra inscrição do grupo", () => {
+    const resultado = processarInscricoes([
+      inscricao({ id: "1", cpf: "11111111111", dataPagamento: "2025-08-01", valorPago: 89, obs: "" }),
+      inscricao({
+        id: "2",
+        cpf: "11111111111",
+        dataPagamento: "2025-11-01",
+        valorPago: 99,
+        obs: "pediu reembolso 30/11",
+      }),
+    ])
+
+    expect(resultado.ativos).toHaveLength(0)
+    expect(resultado.stats.desistencias).toBe(1)
+    const desistencia = resultado.reembolsos.find((item) => item.motivo === "desistencia")
+    expect(desistencia?.id).toBe("1")
+    expect(desistencia?.percentual).toBe(100)
+    expect(desistencia?.devolver).toBe(89)
+    expect(resultado.reembolsos.find((item) => item.motivo === "duplicada")?.devolver).toBe(99)
+  })
+
+  it("alerta percurso não reconhecido e sexo vazio", () => {
+    const resultado = processarInscricoes([
+      inscricao({ id: "1", cpf: "11111111111", percurso: null, sexo: null }),
+    ])
+    expect(resultado.ativos[0]?.categoria).toBe("Sem categoria")
+    expect(resultado.ativos[0]?.alertas).toContain(ALERTAS.percursoDesconhecido)
+    expect(resultado.ativos[0]?.alertas).toContain(ALERTAS.sexo)
   })
 
   it("desconta a taxa de plataforma do valor devolvido", () => {
